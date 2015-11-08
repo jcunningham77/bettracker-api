@@ -1,0 +1,165 @@
+legend {
+	margin:0 0 0px 0;
+	padding:0;
+	font:24px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	letter-spacing:-1px;
+	*margin-bottom:0px;
+}
+
+.banner {
+	margin:0 0 0px 0;
+	padding:0;
+	font:24px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	letter-spacing:-1px;
+	*margin-bottom:0px;
+}
+
+.cacheLabel {
+	margin:0 0 0px 0;
+	padding:5px;
+	font:16px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	letter-spacing:-1px;
+	*margin-bottom:0px;
+}
+
+.cacheTableKeys {
+	margin:0 0 0px 0;
+	padding:0;
+	font:14px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#484848;
+	letter-spacing:-1px;
+	font-weight:bold;
+	*margin-bottom:0px;
+}
+
+.cacheTableValues {
+	margin:0 0 0px 0;
+	padding:0;
+	font:12px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#484848;
+	letter-spacing:-1px;
+	*margin-bottom:0px;
+}
+
+.releaseNotesBig {
+	margin:0 0 0px 0;
+	padding:0;
+	font:24px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	/*letter-spacing:-1px;*/
+	*margin-bottom:0px;
+}
+
+.releaseNotesSmall {
+	margin:0 0 0px 0;
+	padding:0;
+	font:16px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	/*letter-spacing:-1px;*/
+	*margin-bottom:0px;
+}
+
+p.releaseNotes {
+	margin:0 0 0px 0;
+	padding:0;
+	font:14px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	/*letter-spacing:-1px;*/
+	*margin-bottom:0px;
+}
+
+li.releaseNotes {
+	margin:0 0 0px 0;
+	padding:0;
+	font:14px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#e97400;
+	/*letter-spacing:-1px;*/
+	*margin-bottom:0px;
+}
+
+
+td.cacheTableValues{
+    overflow:hidden; 
+    max-width:600px;
+    word-wrap:break-word;
+    margin:0 0 0px 0;
+	padding:3px;
+	font:12px "Century Gothic", Arial, Helvetica, sans-serif;
+	color:#484848;
+	letter-spacing:-1px;
+	*margin-bottom:0px;
+}
+
+
+form {
+	width:800px;
+	
+}
+
+label {
+	color:#404040;
+	font-size:10px;
+	font:12px "Century Gothic", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	width:180px;
+}
+
+.usage {
+	color:4F82F0;
+	font-size:10px;
+	font:10px "Tahoma", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	width:380px;
+	padding-left: 5px;
+	word-wrap: break-word;
+}
+
+.swagger {
+	color:#e97400;
+	font-size:20px;
+	font:20px "Tahoma", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	padding-left: 5px;
+	word-wrap: break-word;
+}
+
+.swagger a {
+	color:#e97400;
+	font-size:20px;
+	font:20px "Tahoma", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	padding-left: 5px;
+	word-wrap: break-word;
+}
+
+.swagger a:visited {
+	color:#e97400;
+	font-size:20px;
+	font:20px "Tahoma", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	padding-left: 5px;
+	word-wrap: break-word;
+}
+
+.swagger a:hover {
+	color:#e97400;
+	font-size:20px;
+	font:20px "Tahoma", Arial, Helvetica, sans-serif;
+	display:inline-block;
+	padding-left: 5px;
+	word-wrap: break-word;
+	text-decoration: underline;
+}
+
+input {
+	display:inline-block;
+}
+
+.Required {
+	color:F5001D;
+	font-size:10px;
+	font-family: Tahoma, Geneva, sans-serif;
+}
