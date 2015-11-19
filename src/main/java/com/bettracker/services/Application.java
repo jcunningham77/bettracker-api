@@ -30,21 +30,37 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 public class Application extends SpringBootServletInitializer
 {
-  @Bean
+  /*@Bean
   public Docket swaggerApi()
   {
     return 
-      new Docket(DocumentationType.SWAGGER_2).select().paths(userOnlyEndpoints()).build().globalResponseMessage(RequestMethod.GET, getDefaultResponseMessages()).apiInfo(apiInfo());
-  }
-  
-	private Predicate<String> userOnlyEndpoints() {
+      new Docket(DocumentationType.SWAGGER_2).select().paths(userOnlyEndpoints()).build()
+      .globalResponseMessage(RequestMethod.GET, getDefaultResponseMessages()).apiInfo(apiInfo());
+  }	private Predicate<String> userOnlyEndpoints() {
 		return new Predicate<String>() {
 			@Override
 			public boolean apply(String input) {
 				return true;
 			}
 		};
+	}*/
+  
+	@Bean
+	public Docket swaggerApi() {
+		return new Docket(DocumentationType.SWAGGER_2).select().paths(userOnlyEndpoints()).build().globalResponseMessage(RequestMethod.GET, getDefaultResponseMessages())
+				.apiInfo(apiInfo());
 	}
+
+	private Predicate<String> userOnlyEndpoints() {
+		return new Predicate<String>() {
+			@Override
+			public boolean apply(String input) {
+				return input.contains("rest");
+			}
+		};
+	}
+  
+
   
  
   

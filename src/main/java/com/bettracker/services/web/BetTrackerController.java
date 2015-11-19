@@ -257,8 +257,10 @@ public class BetTrackerController
     return new ResponseEntity(restUser, responseHeaders, HttpStatus.NO_CONTENT);
   }
   
-  @RequestMapping(value={"rest/user/email/{email:.+}"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
-  public ResponseEntity<Object> getUserByEmail(@ApiParam(value="Email Address of the Requested User Record", required=true) @PathVariable String email)
+  @RequestMapping(value={"rest/user/byEmail"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
+  @ApiOperation(value="GetUserByEmail", notes="Currently, the email address used to filter the user is specified via a query string parameter based on an known issue. (See GitHub Issue)")
+  public ResponseEntity<Object> getUserByEmail(
+		  @ApiParam(value="Email Address of the Requested User Record", required=true) @RequestParam String email)
   {
     HttpHeaders responseHeaders = new HttpHeaders();
     com.bettracker.services.model.User user = null;
@@ -274,11 +276,33 @@ public class BetTrackerController
     {
       logger.info("get user by email = " + email);
       user = this.userDao.findByEmail(email);
+      if (user==null){
+    	  throw new ResourceNotFoundException("Resource Not Found", "No user with email = " + email.toString() + " found in repository");
+      }
       logger.info("found following user = " + user.toString());
       
       restUser.setId(user.getUser_id());
       restUser.setEmail(user.getEmail());
       restUser.setName(user.getName());
+      
+      Set<com.bettracker.services.model.Bet> bets = user.getBets();
+      Iterator<com.bettracker.services.model.Bet> iter = bets.iterator();
+      List<com.bettracker.services.rest.Bet> restBets = new ArrayList();
+      while (iter.hasNext())
+      {
+        com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
+        com.bettracker.services.model.Bet bet = (com.bettracker.services.model.Bet)iter.next();
+        logger.info("bet.bet_id " + bet.getBet_id());
+        restBet.setAwayTeam(bet.getAwayTeam());
+        restBet.setHomeTeam(bet.getHomeTeam());
+        restBet.setId(bet.getBet_id());
+        restBet.setWager(bet.getWager());
+        restBet.setResult(bet.getResult());
+        restBets.add(restBet);
+      }
+      restUser.setBets(restBets);
+      
+      
     }
     catch (Exception ex)
     {
