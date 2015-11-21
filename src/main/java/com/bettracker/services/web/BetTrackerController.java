@@ -74,7 +74,7 @@ public class BetTrackerController
     return new ResponseEntity(restBet, responseHeaders, HttpStatus.OK);
   }
   
-  @RequestMapping(value={"rest/bet/"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
+  @RequestMapping(value={"rest/bet"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
   @ApiOperation(value="CreateBet", notes="Accepts a POST method to create a bet")
   public ResponseEntity<Object> createBet(@ApiParam(value="ID of the Associated User Record", required=true) @RequestParam Long user_id, @ApiParam(value="Wager of the Bet Record", required=true) @RequestParam Integer wager, @ApiParam(value="Result of the Bet Record", required=true) @RequestParam Integer result, @ApiParam(value="HomeTeam of the Bet Record", required=true) @RequestParam String homeTeam, @ApiParam(value="AwayTeam of the Bet Record", required=true) @RequestParam String awayTeam)
     throws ResourceNotFoundException
@@ -198,7 +198,7 @@ public class BetTrackerController
     return new ResponseEntity(restUser, responseHeaders, HttpStatus.OK);
   }
   
-  @RequestMapping(value={"rest/user/"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
+  @RequestMapping(value={"rest/user"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
   @ApiOperation(value="CreateUser", notes="Accepts a POST method to create a user")
   public ResponseEntity<Object> createUser(@ApiParam(value="Email Address of the User Record", required=true) @RequestParam String email, @ApiParam(value="Name of the User Record", required=true) @RequestParam String name)
     throws Exception
