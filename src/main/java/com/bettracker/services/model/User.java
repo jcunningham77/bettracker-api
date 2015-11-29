@@ -26,6 +26,7 @@ public class User
   @NotNull
   private String name;
   
+  
   public Set<Bet> getBets()
   {
     return this.bets;

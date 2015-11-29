@@ -1,18 +1,14 @@
 package com.bettracker.services.web;
 
-import com.bettracker.services.exception.ResourceNotFoundException;
-import com.bettracker.services.model.BetDAO;
-import com.bettracker.services.model.UserDAO;
-import com.bettracker.services.rest.ErrorMessage;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponses;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolationException;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -20,8 +16,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.bettracker.services.exception.InvalidRequestBodyException;
+import com.bettracker.services.exception.ResourceNotFoundException;
+import com.bettracker.services.model.BetDAO;
+import com.bettracker.services.model.UserDAO;
+import com.bettracker.services.rest.Bet;
+import com.bettracker.services.rest.ErrorMessage;
+
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponses;
 
 @Controller("betTrackerController")
 public class BetTrackerController
@@ -42,7 +50,7 @@ public class BetTrackerController
   {
     HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.set("MyResponseHeader", "MyValue");
-    return new ResponseEntity("Hello World", responseHeaders, HttpStatus.OK);
+    return new ResponseEntity<String>("Hello World", responseHeaders, HttpStatus.OK);
   }
   
   @RequestMapping(value={"rest/bet/{bet-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
@@ -71,13 +79,13 @@ public class BetTrackerController
     restUser.setId(user.getUser_id());
     restBet.setUser(restUser);
     
-    return new ResponseEntity(restBet, responseHeaders, HttpStatus.OK);
+    return new ResponseEntity<Object>(restBet, responseHeaders, HttpStatus.OK);
   }
   
   @RequestMapping(value={"rest/bet"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
   @ApiOperation(value="CreateBet", notes="Accepts a POST method to create a bet")
-  public ResponseEntity<Object> createBet(@ApiParam(value="ID of the Associated User Record", required=true) @RequestParam Long user_id, @ApiParam(value="Wager of the Bet Record", required=true) @RequestParam Integer wager, @ApiParam(value="Result of the Bet Record", required=true) @RequestParam Integer result, @ApiParam(value="HomeTeam of the Bet Record", required=true) @RequestParam String homeTeam, @ApiParam(value="AwayTeam of the Bet Record", required=true) @RequestParam String awayTeam)
-    throws ResourceNotFoundException
+  public ResponseEntity<Object> createBet(@ApiParam(value="RequestBody with a JSON RestBet", required=true) @RequestBody com.bettracker.services.rest.Bet inputRestBet)
+    throws Exception
   {
     HttpHeaders responseHeaders = new HttpHeaders();
     com.bettracker.services.model.Bet bet = null;
@@ -85,14 +93,17 @@ public class BetTrackerController
     com.bettracker.services.rest.User restUser = new com.bettracker.services.rest.User();
     try
     {
-      com.bettracker.services.model.User user = (com.bettracker.services.model.User)this.userDao.findOne(user_id);
+      com.bettracker.services.model.User user = (com.bettracker.services.model.User)this.userDao.findOne(inputRestBet.getUser().getId());
       if (user == null)
       {
         logger.error("user not found, throwing Resource Not Found exception");
         logger.info("user not found, throwing Resource Not Found exception");
-        throw new ResourceNotFoundException("Resource Not Found - no user with user_id: " + user_id, "No user with id = " + user_id + " found in repository");
+        throw new ResourceNotFoundException("Resource Not Found - no user with user_id: " + inputRestBet.getUser().getId(), "No user with id = " + inputRestBet.getUser().getId() + " found in repository");
       }
-      bet = new com.bettracker.services.model.Bet(user, wager, result, homeTeam, awayTeam);
+      bet = new com.bettracker.services.model.Bet(user, inputRestBet.getWager(), inputRestBet.getResult(), inputRestBet.getHomeTeam(), inputRestBet.getAwayTeam());
+      
+      
+      logger.info("About to save bet:" + bet.toString());
       this.betDao.save(bet);
       
       restBet.setId(bet.getBet_id());
@@ -104,43 +115,75 @@ public class BetTrackerController
       restUser.setName(user.getName());
       restUser.setId(user.getUser_id());
       restBet.setUser(restUser);
-    }
-    catch (Exception ex)
-    {
+    } catch (ConstraintViolationException ex) {
+    	throw new InvalidRequestBodyException("Required Field not set", "Required field not set in the request"); 
+ 	} catch (InvalidRequestBodyException ex) {
+        ErrorMessage errorMessage = new ErrorMessage();
+        errorMessage.setMessage(ex.getMessage());
+        return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.BAD_REQUEST);	    
+  	} catch (Exception ex) {
       ErrorMessage errorMessage = new ErrorMessage();
       errorMessage.setMessage(ex.getMessage());
-      return new ResponseEntity(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return new ResponseEntity(restBet, responseHeaders, HttpStatus.CREATED);
+    return new ResponseEntity<Object>(restBet, responseHeaders, HttpStatus.CREATED);
   }
   
-  @RequestMapping(value={"rest/bet/{bet-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.PUT})
+  @RequestMapping(value={"rest/bet"}, method={org.springframework.web.bind.annotation.RequestMethod.PUT})
   @ApiOperation(value="UpdateBet", notes="Accepts a PUT method to update a bet")
-  public ResponseEntity<Object> updateBet(@ApiParam(value="Id of the Bet record to update", required=true) @PathVariable("bet-id") Long betId, @ApiParam(value="Wager of the Bet Record", required=true) @RequestParam Integer wager, @ApiParam(value="Result of the Bet Record", required=true) @RequestParam Integer result, @ApiParam(value="HomeTeam of the Bet Record", required=true) @RequestParam String homeTeam, @ApiParam(value="AwayTeam of the Bet Record", required=true) @RequestParam String awayTeam)
-    throws Exception
+  public ResponseEntity<Object> updateBet(@ApiParam(value="RequestBody with a JSON com.bettracker.services.rest.Bet", required=true) @RequestBody com.bettracker.services.rest.Bet inputRestBet)
   {
     HttpHeaders responseHeaders = new HttpHeaders();
-    com.bettracker.services.model.Bet bet = null;
-    com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
-    
-    bet = (com.bettracker.services.model.Bet)this.betDao.findOne(betId);
-    if (bet == null) {
-      throw new ResourceNotFoundException("Resource Not Found", "No bet with id = " + betId.toString() + " found in repository");
-    }
-    bet.setWager(wager);
-    bet.setResult(result);
-    bet.setAwayTeam(awayTeam);
-    bet.setHomeTeam(homeTeam);
-    this.betDao.save(bet);
-    
-    restBet.setId(bet.getBet_id());
-    restBet.setAwayTeam(bet.getAwayTeam());
-    restBet.setHomeTeam(bet.getHomeTeam());
-    restBet.setResult(bet.getResult());
-    restBet.setWager(bet.getWager());
-    
-    return new ResponseEntity(restBet, responseHeaders, HttpStatus.OK);
-  }
+    try{
+	    com.bettracker.services.model.Bet bet = null;
+	    com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
+	    
+	    bet = (com.bettracker.services.model.Bet)this.betDao.findOne(inputRestBet.getId());
+	    if (bet == null) {
+	      throw new ResourceNotFoundException("Resource Not Found", "No bet with id = " + inputRestBet.getId() + " found in repository");
+	    }
+	    //manually throw a InvalidRequestBodyException if one of the @NotNull Bet fields is missing - 
+	    //for some reason this isn't resulting in an ConstraintViolationException like it does on the
+	    //insert
+	    if (inputRestBet.getWager()==null){
+	    	throw new InvalidRequestBodyException("Required Field, \"wager\", not set", "Required field, \"wager\", not set in the request");
+	    }
+	    
+	    if (inputRestBet.getHomeTeam()==null){
+	    	throw new InvalidRequestBodyException("Required Field,  \"homeTeam\",  not set", "Required field, \"homeTeam\", not set in the request");
+	    }	  
+	    
+	    if (inputRestBet.getAwayTeam()==null){
+	    	throw new InvalidRequestBodyException("Required Field, \"awayTeam\", not set", "Required field, \"awayTeam\", not set in the request");
+	    }		    
+	    
+	    bet.setWager(inputRestBet.getWager());
+	    bet.setResult(inputRestBet.getResult());
+	    bet.setAwayTeam(inputRestBet.getAwayTeam());
+	    bet.setHomeTeam(inputRestBet.getHomeTeam());
+	    logger.info("About to save bet:" + bet.toString());
+	    this.betDao.save(bet);
+	    
+	    restBet.setId(bet.getBet_id());
+	    restBet.setAwayTeam(bet.getAwayTeam());
+	    restBet.setHomeTeam(bet.getHomeTeam());
+	    restBet.setResult(bet.getResult());
+	    restBet.setWager(bet.getWager());
+	    
+	    return new ResponseEntity<Object>(restBet, responseHeaders, HttpStatus.OK);
+	//TODO: move the below exception handling to @ControllerAdvice    
+    } catch (ConstraintViolationException ex) {
+        throw new InvalidRequestBodyException("Required field not set on request", "Required field not set on request body"); 	    
+  	} catch (InvalidRequestBodyException ex) {
+        ErrorMessage errorMessage = new ErrorMessage();
+        errorMessage.setMessage(ex.getMessage());
+        return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.BAD_REQUEST);	    
+  	} catch (Exception ex) {
+        ErrorMessage errorMessage = new ErrorMessage();
+        errorMessage.setMessage(ex.getMessage());
+        return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
+    }   
+  }  
   
   @RequestMapping(value={"rest/bet/{bet-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.DELETE})
   @ApiOperation(value="DeleteBet", notes="Accepts a DELETE method to delete a bet")
@@ -157,7 +200,7 @@ public class BetTrackerController
     }
     this.betDao.delete(bet);
     
-    return new ResponseEntity(restBet, responseHeaders, HttpStatus.NO_CONTENT);
+    return new ResponseEntity<Object>(restBet, responseHeaders, HttpStatus.NO_CONTENT);
   }
   
   @RequestMapping(value={"rest/user/{user-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
@@ -180,7 +223,7 @@ public class BetTrackerController
     
     Set<com.bettracker.services.model.Bet> bets = user.getBets();
     Iterator<com.bettracker.services.model.Bet> iter = bets.iterator();
-    List<com.bettracker.services.rest.Bet> restBets = new ArrayList();
+    List<com.bettracker.services.rest.Bet> restBets = new ArrayList<Bet>();
     while (iter.hasNext())
     {
       com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
@@ -195,48 +238,70 @@ public class BetTrackerController
     }
     restUser.setBets(restBets);
     
-    return new ResponseEntity(restUser, responseHeaders, HttpStatus.OK);
+    return new ResponseEntity<Object>(restUser, responseHeaders, HttpStatus.OK);
   }
   
   @RequestMapping(value={"rest/user"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
   @ApiOperation(value="CreateUser", notes="Accepts a POST method to create a user")
-  public ResponseEntity<Object> createUser(@ApiParam(value="Email Address of the User Record", required=true) @RequestParam String email, @ApiParam(value="Name of the User Record", required=true) @RequestParam String name)
-    throws Exception
+  public ResponseEntity<Object> createUser(@ApiParam(value="RequestBody with a JSON RestUser - ID as well as Bet fields will be ignored by this method, since this is for creating NEW user records", required=true, defaultValue="{\"email\": \"jcunningham77@gmail.com\",\"name\": \"Jeffrey B Cunningham\"}") @RequestBody com.bettracker.services.rest.User inputRestUser)
+  throws Exception
   {
-    HttpHeaders responseHeaders = new HttpHeaders();
-    com.bettracker.services.model.User user = null;
+	HttpHeaders responseHeaders = new HttpHeaders();
+	try {
+
+	    com.bettracker.services.model.User user = null;
+	    
+	    user = new com.bettracker.services.model.User(inputRestUser.getEmail(), inputRestUser.getName());
+	    this.userDao.save(user);
+	    com.bettracker.services.rest.User restUser = new com.bettracker.services.rest.User();
+	    restUser.setId(user.getUser_id());
+	    restUser.setEmail(user.getEmail());
+	    restUser.setName(user.getName());
+	    return new ResponseEntity<Object>(restUser, responseHeaders, HttpStatus.OK);
+	} catch (ConstraintViolationException ex) {
+		logger.info("Caught ConstraintViolationException ex  =" + ex.getMessage());
+        throw new InvalidRequestBodyException("Required field not set on request", "Required field not set on request body"); 	    
+  	}catch (Exception ex) {
+      ErrorMessage errorMessage = new ErrorMessage();
+      errorMessage.setMessage(ex.getMessage());
+      return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     
-    user = new com.bettracker.services.model.User(email, name);
-    this.userDao.save(user);
-    com.bettracker.services.rest.User restUser = new com.bettracker.services.rest.User();
-    restUser.setId(user.getUser_id());
-    restUser.setEmail(user.getEmail());
-    restUser.setName(user.getName());
-    return new ResponseEntity(restUser, responseHeaders, HttpStatus.OK);
   }
   
-  @RequestMapping(value={"rest/user/{user-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.PUT})
+  @RequestMapping(value={"rest/user"}, method={org.springframework.web.bind.annotation.RequestMethod.PUT})
   @ApiOperation(value="UpdateUser", notes="Accepts a PUT method to update a user")
-  public ResponseEntity<Object> updateUser(@ApiParam(value="Id of the User record to update", required=true) @PathVariable("user-id") Long userId, @ApiParam(value="Email of the User Record", required=true) @RequestParam String email, @ApiParam(value="Name of the User Record", required=true) @RequestParam String name)
-    throws Exception
+  public ResponseEntity<Object> updateUser(@ApiParam(value="RequestBody with a JSON RestUser", required=true, defaultValue="{\"id\": 1,\"email\": \"jcunningham77@gmail.com\",\"name\": \"Jeffrey B Cunningham\"}") @RequestBody com.bettracker.services.rest.User inputRestUser)
+    throws ResourceNotFoundException, InvalidRequestBodyException, Exception
   {
     HttpHeaders responseHeaders = new HttpHeaders();
     com.bettracker.services.model.User user = null;
     com.bettracker.services.rest.User restUser = new com.bettracker.services.rest.User();
     
-    user = (com.bettracker.services.model.User)this.userDao.findOne(userId);
+    user = (com.bettracker.services.model.User)this.userDao.findOne(inputRestUser.getId());
     if (user == null) {
-      throw new ResourceNotFoundException("Resource Not Found", "No user with id = " + userId.toString() + " found in repository");
+      throw new ResourceNotFoundException("Resource Not Found", "No user with id = " + inputRestUser.getId() + " found in repository");
     }
-    user.setEmail(email);
-    user.setName(name);
+    
+    if (inputRestUser.getEmail()==null){
+    	throw new InvalidRequestBodyException("Required Field, 'email', not set", "Required field, \"email\", not set in the request");
+    }
+
+    if (inputRestUser.getName()==null){
+    	throw new InvalidRequestBodyException("Required Field, 'name', not set", "Required field, \"name\", not set in the request");
+    }    
+    
+    
+    
+    user.setEmail(inputRestUser.getEmail());
+    user.setName(inputRestUser.getName());
     this.userDao.save(user);
     
     restUser.setId(user.getUser_id());
     restUser.setEmail(user.getEmail());
     restUser.setName(user.getName());
     
-    return new ResponseEntity(restUser, responseHeaders, HttpStatus.OK);
+    return new ResponseEntity<Object>(restUser, responseHeaders, HttpStatus.OK);
   }
   
   @RequestMapping(value={"rest/user/{user-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.DELETE})
@@ -254,7 +319,7 @@ public class BetTrackerController
     }
     this.userDao.delete(user);
     
-    return new ResponseEntity(restUser, responseHeaders, HttpStatus.NO_CONTENT);
+    return new ResponseEntity<Object>(restUser, responseHeaders, HttpStatus.NO_CONTENT);
   }
   
   @RequestMapping(value={"rest/user/byEmail"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
@@ -265,7 +330,7 @@ public class BetTrackerController
     HttpHeaders responseHeaders = new HttpHeaders();
     com.bettracker.services.model.User user = null;
     com.bettracker.services.rest.User restUser = new com.bettracker.services.rest.User();
-    Enumeration headerNames = this.request.getHeaderNames();
+    Enumeration<?> headerNames = this.request.getHeaderNames();
     while (headerNames.hasMoreElements())
     {
       String key = (String)headerNames.nextElement();
@@ -287,7 +352,7 @@ public class BetTrackerController
       
       Set<com.bettracker.services.model.Bet> bets = user.getBets();
       Iterator<com.bettracker.services.model.Bet> iter = bets.iterator();
-      List<com.bettracker.services.rest.Bet> restBets = new ArrayList();
+      List<com.bettracker.services.rest.Bet> restBets = new ArrayList<Bet>();
       while (iter.hasNext())
       {
         com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
@@ -308,9 +373,9 @@ public class BetTrackerController
     {
       ErrorMessage errorMessage = new ErrorMessage();
       errorMessage.setMessage(ex.getMessage());
-      return new ResponseEntity(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<Object>(errorMessage, responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     logger.info("about to return this restUser = " + restUser.toString() + "and this response header = " + responseHeaders);
-    return new ResponseEntity(restUser, HttpStatus.OK);
+    return new ResponseEntity<Object>(restUser, HttpStatus.OK);
   }
 }

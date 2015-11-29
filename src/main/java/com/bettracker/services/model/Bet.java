@@ -37,6 +37,11 @@ public class Bet
     this.user = user;
   }
   
+  public String toString(){
+	  String betString = "bet_id = " + bet_id + ", wager = " + wager + ", result = " + result + ", homeTeam = " + homeTeam + ", awayTeam = " + awayTeam + ", user = " + user.toString();
+	  return betString;
+  }
+  
   public Bet() {}
   
   public Bet(long bet_id)
