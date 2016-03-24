@@ -1,7 +1,7 @@
 package com.bettracker.services.rest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Bet

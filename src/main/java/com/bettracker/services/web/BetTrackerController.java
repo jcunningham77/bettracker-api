@@ -24,6 +24,7 @@ import com.bettracker.services.exception.InvalidRequestBodyException;
 import com.bettracker.services.exception.ResourceNotFoundException;
 import com.bettracker.services.model.BetDAO;
 import com.bettracker.services.model.UserDAO;
+import com.bettracker.services.model.BetQueryDAO;
 import com.bettracker.services.rest.Bet;
 import com.bettracker.services.rest.ErrorMessage;
 
@@ -39,6 +40,8 @@ public class BetTrackerController
   private UserDAO userDao;
   @Autowired
   private BetDAO betDao;
+  @Autowired
+  private BetQueryDAO betQueryDao;  
   @Autowired
   private HttpServletRequest request;
   
@@ -81,6 +84,42 @@ public class BetTrackerController
     
     return new ResponseEntity<Object>(restBet, responseHeaders, HttpStatus.OK);
   }
+  //this is pretty redundant to the getuser method, just wanted to try to get access the the data in a slightly different way
+  @RequestMapping(value={"rest/bet/user/{user-id}"}, method={org.springframework.web.bind.annotation.RequestMethod.GET})
+  @ApiOperation(value="GetBetsByUserId", notes="Accepts a GET method to retrieve a bet by user ID")
+  public ResponseEntity<Object> getBetsByUserId(@ApiParam(value="UniqueKey for User", required=true) @PathVariable("user-id") Long userId)
+    throws Exception
+  {
+    logger.info("entering");
+    HttpHeaders responseHeaders = new HttpHeaders();
+    com.bettracker.services.rest.Bet restBet = new com.bettracker.services.rest.Bet();
+    com.bettracker.services.model.User user = this.userDao.findOne(userId);
+    
+    List<com.bettracker.services.model.Bet> bets = this.betQueryDao.findByUser(user);
+    if (bets == null) {
+      logger.info("no bets found");
+      throw new ResourceNotFoundException("Resource Not Found", "No bet with user_id = " + userId.toString() + " found in repository");
+    }
+    List<com.bettracker.services.rest.Bet> restBets = new ArrayList<com.bettracker.services.rest.Bet>();
+    com.bettracker.services.model.Bet bet;
+    Iterator<com.bettracker.services.model.Bet> betsIterator = bets.iterator();
+    while(betsIterator.hasNext()){
+    	bet = (com.bettracker.services.model.Bet)betsIterator.next();
+    	restBet.setId(bet.getBet_id());
+        restBet.setAwayTeam(bet.getAwayTeam());
+        restBet.setHomeTeam(bet.getHomeTeam());
+        restBet.setResult(bet.getResult());
+        restBet.setWager(bet.getWager());
+    	restBets.add(restBet);
+    }
+    
+
+    
+    
+    return new ResponseEntity<Object>(restBets, responseHeaders, HttpStatus.OK);
+  }  
+  
+  
   
   @RequestMapping(value={"rest/bet"}, method={org.springframework.web.bind.annotation.RequestMethod.POST})
   @ApiOperation(value="CreateBet", notes="Accepts a POST method to create a bet")
